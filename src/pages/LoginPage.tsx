@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import { authenticate, getCurrentUser } from '../services/authService';
@@ -13,6 +13,16 @@ const LoginPage: React.FC = () => {
   const [activeField, setActiveField] = useState<'email' | 'password' | null>(null);
   
   const user = getCurrentUser();
+  
+  useEffect(() => {
+    // Enable scrolling for login page
+    document.body.classList.add('login-page-scrollable');
+    
+    // Cleanup function to remove the class when component unmounts
+    return () => {
+      document.body.classList.remove('login-page-scrollable');
+    };
+  }, []);
   
   if (user) {
     return <Navigate to="/dashboard" replace />;
