@@ -1,7 +1,7 @@
 import { Drink, Order, OrderItem, Revenue, TimeLog } from "../types";
 import { getCurrentUser, registerActivity } from "./authService";
 
-// Catalogue de boissons
+// Catalogue de boissonsddd
 const initialDrinks: Drink[] = [
   {
     id: "1",
