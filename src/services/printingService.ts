@@ -219,6 +219,9 @@ export const printTicket = (order: Order): void => {
   agentCopy += ESCPOSFormatter.multipleLines(4);
   agentCopy += ESCPOSFormatter.cutPaper();
   
-  // Print both tickets in the same window
-  ESCPOSFormatter.printBothTickets(customerTicket, agentCopy);
+  // Print customer ticket first
+  ESCPOSFormatter.print(customerTicket);
+  
+  // Print agent copy right after
+  ESCPOSFormatter.print(agentCopy);
 };
