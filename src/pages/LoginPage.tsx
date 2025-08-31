@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
@@ -62,18 +61,18 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-cafeLightGray px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-cafeLightGray px-2 py-4">
+      <div className="w-full max-w-sm">
         <AuthLayout title="Connexion">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {error && (
-              <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-500 text-center">
+              <div className="mb-3 rounded-md bg-red-50 p-2 text-xs text-red-500 text-center">
                 {error}
               </div>
             )}
             
             <div>
-              <label className="mb-2 block text-sm font-medium text-cafeBlack text-center">
+              <label className="mb-1 block text-xs font-medium text-cafeBlack text-center">
                 Email
               </label>
               <input
@@ -81,13 +80,13 @@ const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onFocus={() => setActiveField('email')}
-                className="cafe-input w-full text-center"
+                className="cafe-input w-full text-center text-sm h-8 px-2"
                 placeholder="votre@email.com"
               />
             </div>
             
             <div>
-              <label className="mb-2 block text-sm font-medium text-cafeBlack text-center">
+              <label className="mb-1 block text-xs font-medium text-cafeBlack text-center">
                 Mot de passe
               </label>
               <input
@@ -95,29 +94,29 @@ const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setActiveField('password')}
-                className="cafe-input w-full text-center"
+                className="cafe-input w-full text-center text-sm h-8 px-2"
                 placeholder="••••••••"
               />
             </div>
             
             <button
               type="submit"
-              className="flex w-full items-center justify-center rounded-md bg-cafeGold py-3 font-medium text-black transition-colors hover:bg-yellow-600"
+              className="flex w-full items-center justify-center rounded-md bg-cafeGold py-2 text-sm font-medium text-black transition-colors hover:bg-yellow-600"
             >
-              <LogIn size={18} className="mr-2" />
+              <LogIn size={16} className="mr-1" />
               Se connecter
             </button>
           </form>
-          
-          {/* Virtual Keyboard */}
-          <div className="mt-6">
-            <VirtualKeyboard 
-              onKeyPress={handleKeyPress}
-              onBackspace={handleBackspace}
-              isPassword={activeField === 'password'}
-            />
-          </div>
         </AuthLayout>
+      </div>
+      
+      {/* Virtual Keyboard - Now outside AuthLayout for better space management */}
+      <div className="w-full max-w-sm mt-4">
+        <VirtualKeyboard 
+          onKeyPress={handleKeyPress}
+          onBackspace={handleBackspace}
+          isPassword={activeField === 'password'}
+        />
       </div>
     </div>
   );
