@@ -1,0 +1,14 @@
+
+[install]
+registry = "https://registry.npmjs.org/"
+optional = true
+exact = true
+cache = false
+production = false
+
+[install.git]
+enabled = false
+
+[install.lockfile]
+save = true
+print = "yarn"
