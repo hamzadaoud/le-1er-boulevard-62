@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import { authenticate, getCurrentUser } from '../services/authService';
 import { LogIn } from 'lucide-react';
@@ -10,6 +10,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [activeField, setActiveField] = useState<'email' | 'password' | null>(null);
+  const navigate = useNavigate();
   
   const user = getCurrentUser();
   
@@ -38,7 +39,7 @@ const LoginPage: React.FC = () => {
     const user = authenticate(email, password);
     
     if (user) {
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     } else {
       setError('Email ou mot de passe incorrect');
     }
