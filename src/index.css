@@ -37,6 +37,13 @@
 
     --radius: 0.5rem;
   }
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* disable double scroll */
+  height: 100%;
+  width: 100%;
+}
 
   body {
     @apply bg-background text-foreground font-sans;

@@ -15,12 +15,11 @@ try {
 let mainWindow;
 
 function createWindow() {
-  // Create the browser windows
+  // 🔒 Production-secure window
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 1024,
-    minHeight: 768,
+    fullscreen: true,             // Force fullscreen
+    frame: false,                 // Remove close/min/max buttons
+    resizable: false,             // Prevent resizing
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -29,25 +28,23 @@ function createWindow() {
       webSecurity: true
     },
     icon: path.join(__dirname, '../public/favicon.ico'),
-    show: false,
-    titleBarStyle: 'default'
+    show: false
   });
 
   // Load the app
   if (isDev) {
     mainWindow.loadURL('http://localhost:8080');
-    // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    mainWindow.removeMenu(); // 🔒 Disable menus in production
   }
 
-  // Show window when ready to prevent visual flash
+  // Show window when ready
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
-  // Handle window closed
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -58,90 +55,20 @@ function createWindow() {
     return { action: 'deny' };
   });
 
-  // Prevent navigation to external sites
+  // 🔒 Prevent navigation to external sites
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
-    
     if (parsedUrl.origin !== 'http://localhost:8080' && parsedUrl.origin !== 'file://') {
       event.preventDefault();
     }
   });
 }
 
-// Create application menu
-function createMenu() {
-  const template = [
-    {
-      label: 'File',
-      submenu: [
-        {
-          label: 'Quit',
-          accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
-          click: () => {
-            app.quit();
-          }
-        }
-      ]
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'close' }
-      ]
-    }
-  ];
-
-  if (process.platform === 'darwin') {
-    template.unshift({
-      label: app.getName(),
-      submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'services' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
-        { type: 'separator' },
-        { role: 'quit' }
-      ]
-    });
-  }
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
-}
+// 🔒 Removed createMenu() → No menus in production
 
 // App event listeners
 app.whenReady().then(() => {
   createWindow();
-  createMenu();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -167,11 +94,9 @@ app.on('web-contents-created', (event, contents) => {
 // Handle certificate errors
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
   if (isDev) {
-    // In development, ignore certificate errors
     event.preventDefault();
     callback(true);
   } else {
-    // In production, use default behavior
     callback(false);
   }
 });
@@ -188,9 +113,7 @@ try {
 let printerPort = null;
 let connectedPrinter = null;
 
-// IPC Handlers
-
-// Window controls
+// IPC Handlers for window controls (used if you add your own UI buttons)
 ipcMain.handle('window-minimize', async () => {
   const window = BrowserWindow.getFocusedWindow();
   if (window) window.minimize();
@@ -199,11 +122,8 @@ ipcMain.handle('window-minimize', async () => {
 ipcMain.handle('window-maximize', async () => {
   const window = BrowserWindow.getFocusedWindow();
   if (window) {
-    if (window.isMaximized()) {
-      window.unmaximize();
-    } else {
-      window.maximize();
-    }
+    if (window.isMaximized()) window.unmaximize();
+    else window.maximize();
   }
 });
 
@@ -216,9 +136,7 @@ ipcMain.handle('window-close', async () => {
 ipcMain.handle('dialog-open-file', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
-    filters: [
-      { name: 'All Files', extensions: ['*'] }
-    ]
+    filters: [{ name: 'All Files', extensions: ['*'] }]
   });
   return result.canceled ? null : result.filePaths[0];
 });
@@ -250,8 +168,7 @@ ipcMain.handle('store-delete', async (event, key) => {
 ipcMain.handle('list-serial-ports', async () => {
   try {
     if (!SerialPort) return [];
-    const ports = await SerialPort.list();
-    return ports;
+    return await SerialPort.list();
   } catch (error) {
     console.error('Error listing serial ports:', error);
     return [];
@@ -261,11 +178,8 @@ ipcMain.handle('list-serial-ports', async () => {
 ipcMain.handle('connect-printer', async (event, portPath) => {
   try {
     if (!SerialPort) return false;
-    
-    if (connectedPrinter) {
-      connectedPrinter.close();
-    }
-    
+    if (connectedPrinter) connectedPrinter.close();
+
     connectedPrinter = new SerialPort({
       path: portPath,
       baudRate: 9600,
@@ -273,7 +187,7 @@ ipcMain.handle('connect-printer', async (event, portPath) => {
       parity: 'none',
       stopBits: 1
     });
-    
+
     printerPort = portPath;
     return true;
   } catch (error) {
@@ -282,7 +196,6 @@ ipcMain.handle('connect-printer', async (event, portPath) => {
   }
 });
 
-// List available system printers
 ipcMain.handle('list-system-printers', async () => {
   try {
     const printers = mainWindow.webContents.getPrinters();
@@ -301,46 +214,29 @@ ipcMain.handle('list-system-printers', async () => {
 
 ipcMain.handle('print-data', async (event, data) => {
   try {
-    // First try Windows system printers
     const printers = mainWindow.webContents.getPrinters();
-    const thermalPrinter = printers.find(p => 
-      p.name.toLowerCase().includes('thermal') || 
-      p.name.toLowerCase().includes('receipt') ||
-      p.name.toLowerCase().includes('ticket') ||
-      p.name.toLowerCase().includes('generic') ||
-      p.name.toLowerCase().includes('text only')
+    const thermalPrinter = printers.find(p =>
+      ['thermal', 'receipt', 'ticket', 'generic', 'text only']
+        .some(keyword => p.name.toLowerCase().includes(keyword))
     );
 
     if (thermalPrinter) {
       console.log(`Found system printer: ${thermalPrinter.name}`);
-      
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         mainWindow.webContents.print({
           silent: true,
-          printBackground: false,
           deviceName: thermalPrinter.name,
-          margins: {
-            marginType: 'none'
-          },
-          pageRanges: '',
-          duplexMode: 'simplex',
-          collate: false,
-          copies: 1,
-          header: '',
-          footer: ''
+          margins: { marginType: 'none' },
+          copies: 1
         }, (success, failureReason) => {
-          if (success) {
-            console.log('Successfully printed to system printer');
-            resolve(true);
-          } else {
+          if (success) resolve(true);
+          else {
             console.error('Print failed:', failureReason);
-            // Fallback to serial printer
             printToSerial(data).then(resolve);
           }
         });
       });
     } else {
-      // Fallback to serial printer
       return await printToSerial(data);
     }
   } catch (error) {
@@ -356,7 +252,6 @@ async function printToSerial(data) {
       console.error('No printer connected or printer not open');
       return false;
     }
-    
     return new Promise((resolve, reject) => {
       connectedPrinter.write(data, (error) => {
         if (error) {
