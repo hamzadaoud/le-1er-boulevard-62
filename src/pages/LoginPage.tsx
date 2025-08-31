@@ -4,11 +4,13 @@ import { Navigate } from 'react-router-dom';
 import AuthLayout from '../components/AuthLayout';
 import { authenticate, getCurrentUser } from '../services/authService';
 import { LogIn } from 'lucide-react';
+import VirtualKeyboard from '../components/VirtualKeyboard';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [activeField, setActiveField] = useState<'email' | 'password' | null>(null);
   
   const user = getCurrentUser();
   
@@ -33,6 +35,22 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleKeyPress = (key: string) => {
+    if (activeField === 'email') {
+      setEmail(prev => prev + key);
+    } else if (activeField === 'password') {
+      setPassword(prev => prev + key);
+    }
+  };
+
+  const handleBackspace = () => {
+    if (activeField === 'email') {
+      setEmail(prev => prev.slice(0, -1));
+    } else if (activeField === 'password') {
+      setPassword(prev => prev.slice(0, -1));
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-cafeLightGray px-4">
       <div className="w-full max-w-md">
@@ -52,6 +70,7 @@ const LoginPage: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setActiveField('email')}
                 className="cafe-input w-full text-center"
                 placeholder="votre@email.com"
               />
@@ -65,6 +84,7 @@ const LoginPage: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setActiveField('password')}
                 className="cafe-input w-full text-center"
                 placeholder="••••••••"
               />
@@ -78,6 +98,15 @@ const LoginPage: React.FC = () => {
               Se connecter
             </button>
           </form>
+          
+          {/* Virtual Keyboard */}
+          <div className="mt-6">
+            <VirtualKeyboard 
+              onKeyPress={handleKeyPress}
+              onBackspace={handleBackspace}
+              isPassword={activeField === 'password'}
+            />
+          </div>
         </AuthLayout>
       </div>
     </div>
