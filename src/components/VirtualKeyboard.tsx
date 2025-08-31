@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from './ui/button';
 import { Delete } from 'lucide-react';
 
@@ -23,15 +22,15 @@ const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
   const symbols = ['@', '.', '-', '_'];
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-2 sm:p-4 bg-card rounded-lg border">
+    <div className="w-full max-w-lg mx-auto p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border shadow-sm">
       {/* Numbers Row */}
-      <div className="flex justify-center gap-0.5 sm:gap-1 mb-2 sm:mb-3">
+      <div className="flex justify-center gap-1 mb-2">
         {numbers.map((num) => (
           <Button
             key={num}
             variant="outline"
             size="sm"
-            className="h-8 w-8 sm:h-10 sm:w-10 text-xs sm:text-sm p-0"
+            className="h-7 w-7 text-xs p-0 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
             onClick={() => onKeyPress(num)}
           >
             {num}
@@ -41,13 +40,13 @@ const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
 
       {/* Letter Rows */}
       {letters.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex justify-center gap-0.5 sm:gap-1 mb-1 sm:mb-2">
+        <div key={rowIndex} className="flex justify-center gap-1 mb-2">
           {row.map((letter) => (
             <Button
               key={letter}
               variant="outline"
               size="sm"
-              className="h-8 w-8 sm:h-10 sm:w-10 text-xs sm:text-sm p-0"
+              className="h-7 w-7 text-xs p-0 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               onClick={() => onKeyPress(letter)}
             >
               {letter.toUpperCase()}
@@ -56,34 +55,41 @@ const VirtualKeyboard: React.FC<VirtualKeyboardProps> = ({
         </div>
       ))}
 
-      {/* Symbols and Space Row */}
-      <div className="flex justify-center gap-0.5 sm:gap-1 mb-1 sm:mb-2 flex-wrap">
-        {symbols.map((symbol) => (
-          <Button
-            key={symbol}
-            variant="outline"
-            size="sm"
-            className="h-8 w-10 sm:h-10 sm:w-12 text-xs sm:text-sm p-0"
-            onClick={() => onKeyPress(symbol)}
-          >
-            {symbol}
-          </Button>
-        ))}
+      {/* Bottom Row - Symbols, Space, Delete */}
+      <div className="flex justify-center items-center gap-1">
+        {/* Symbols */}
+        <div className="flex gap-1">
+          {symbols.map((symbol) => (
+            <Button
+              key={symbol}
+              variant="outline"
+              size="sm"
+              className="h-7 w-8 text-xs p-0 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              onClick={() => onKeyPress(symbol)}
+            >
+              {symbol}
+            </Button>
+          ))}
+        </div>
+        
+        {/* Space */}
         <Button
           variant="outline"
           size="sm"
-          className="h-8 w-16 sm:h-10 sm:w-20 text-xs sm:text-sm p-0"
+          className="h-7 w-20 text-xs p-0 font-medium hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
           onClick={() => onKeyPress(' ')}
         >
-          Space
+          ESPACE
         </Button>
+        
+        {/* Delete */}
         <Button
           variant="outline"
           size="sm"
-          className="h-8 w-12 sm:h-10 sm:w-16 text-xs sm:text-sm p-0"
+          className="h-7 w-10 text-xs p-0 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
           onClick={onBackspace}
         >
-          <Delete size={14} className="sm:w-4 sm:h-4" />
+          <Delete size={12} />
         </Button>
       </div>
     </div>
