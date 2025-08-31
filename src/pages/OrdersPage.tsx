@@ -3,7 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { Coffee, Printer, Milk, Banana, GlassWater, Beer, Sandwich } from 'lucide-react';
 import { Drink, OrderItem } from '../types';
 import { createOrder, getDrinks } from '../services/cafeService';
-import { printTicket } from '../services/ticketService';
+import { printTicket } from '../services/printingService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const OrdersPage: React.FC = () => {

@@ -4,7 +4,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { getOrders } from '../services/cafeService';
 import { Printer } from 'lucide-react';
 import { Order } from '../types';
-import { printThermalInvoice } from '../services/thermalInvoiceService';
+import { printThermalInvoice } from '../services/printingService';
 
 const InvoicesPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
