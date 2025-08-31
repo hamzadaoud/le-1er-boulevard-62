@@ -1,5 +1,5 @@
 // ESC/POS command utilities for thermal printers - Enhanced for darker printing
-import { printToElectronPrinter, isElectron } from './electronUtils';
+import { printToElectronPrinter, isElectron, electronStore } from './electronUtils';
 
 export class ESCPOSFormatter {
   // ESC/POS control commands
@@ -216,6 +216,11 @@ export class ESCPOSFormatter {
   }
   
   private static async printDirectly(content: string): Promise<void> {
+    // Get saved printer settings
+    const printerType = await electronStore.get('printerType') || 'serial';
+    const savedSerialPort = await electronStore.get('selectedSerialPort');
+    const savedSystemPrinter = await electronStore.get('selectedSystemPrinter');
+    
     // Try Electron printing first if available
     if (isElectron()) {
       try {
@@ -230,18 +235,33 @@ export class ESCPOSFormatter {
       }
     }
     
-    // Web Serial API printing with enhanced settings
-    if ('serial' in navigator) {
+    // Use saved printer settings for Web Serial API
+    if ('serial' in navigator && printerType === 'serial') {
       try {
-        // Auto-request port if none selected
-        if (!this.selectedPort) {
+        let portToUse = this.selectedPort;
+        
+        // Use saved port if available and no port currently selected
+        if (!portToUse && savedSerialPort) {
+          console.log(`[ESCPOS] Using saved serial port: ${savedSerialPort}`);
+          // Request the specific saved port
+          const availablePorts = await (navigator as any).serial.getPorts();
+          portToUse = availablePorts.find((port: any) => port.getInfo().usbVendorId || port.path === savedSerialPort);
+          
+          if (!portToUse) {
+            console.log('[ESCPOS] Saved port not found, requesting port selection...');
+            portToUse = await (navigator as any).serial.requestPort();
+          }
+          
+          this.selectedPort = portToUse;
+        } else if (!portToUse) {
           console.log('[ESCPOS] Requesting serial port for thermal printer...');
-          this.selectedPort = await (navigator as any).serial.requestPort();
+          portToUse = await (navigator as any).serial.requestPort();
+          this.selectedPort = portToUse;
         }
         
         // Check if port is already open, if not open it with optimal settings
-        if (!this.selectedPort.readable) {
-          await this.selectedPort.open({ 
+        if (!portToUse.readable) {
+          await portToUse.open({ 
             baudRate: 9600,
             dataBits: 8,
             stopBits: 1,
@@ -250,7 +270,7 @@ export class ESCPOSFormatter {
           });
         }
         
-        const writer = this.selectedPort.writable.getWriter();
+        const writer = portToUse.writable.getWriter();
         const encoder = new TextEncoder();
         
         // Send raw ESC/POS content with enhanced darkness settings
@@ -265,16 +285,21 @@ export class ESCPOSFormatter {
         this.selectedPort = null;
         
         // Show error dialog
-        alert('Erreur d\'impression: Impossible de se connecter à l\'imprimante thermique. Vérifiez la connexion USB.');
+        alert('Erreur d\'impression: Impossible de se connecter à l\'imprimante thermique. Vérifiez la connexion USB ou configurez l\'imprimante dans les paramètres.');
         throw error;
       }
+    } else if (printerType === 'system' && savedSystemPrinter) {
+      console.log(`[ESCPOS] Using system printer: ${savedSystemPrinter}`);
+      // For system printers, use browser printing with the saved printer
+      this.fallbackPrint(content, savedSystemPrinter);
+      return;
     } else {
-      console.warn('Web Serial API not supported in this browser');
+      console.warn('No printer configured or Web Serial API not supported');
       this.fallbackPrint(content);
     }
   }
   
-  private static fallbackPrint(content: string): void {
+  private static fallbackPrint(content: string, printerName?: string): void {
     // Clean content for printing
     const cleanContent = this.cleanContentForBrowser(content);
     
@@ -326,6 +351,10 @@ export class ESCPOSFormatter {
       // Print after content loads
       setTimeout(() => {
         if (iframe.contentWindow) {
+          // If specific printer name is provided, try to use it (limited browser support)
+          if (printerName) {
+            console.log(`Printing to system printer: ${printerName}`);
+          }
           iframe.contentWindow.print();
         }
         // Remove iframe after printing

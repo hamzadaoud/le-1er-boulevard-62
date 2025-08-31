@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Coffee, User, Users, Receipt, Calendar, BarChart2, Activity, Tags } from 'lucide-react';
+import { Coffee, User, Users, Receipt, Calendar, BarChart2, Activity, Tags, Settings } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface SidebarProps {
@@ -68,6 +68,12 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       to: '/profile',
       label: 'Mon Profil',
       icon: <User size={20} />,
+    },
+    {
+      to: '/settings',
+      label: 'Paramètres',
+      icon: <Settings size={20} />,
+      adminOnly: true,
     },
   ];
   
