@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       to: '/invoices',
       label: 'Factures',
       icon: <Receipt size={20} />,
-      adminOnly: true,
+      adminOnly: false,
     },
     {
       to: '/revenue',

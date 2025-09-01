@@ -59,7 +59,7 @@ function App() {
         <Route path="/time-tracking" element={<ProtectedRoute><TimeTrackingPage /></ProtectedRoute>} />
         <Route path="/agents" element={<ProtectedRoute><AgentsPage /></ProtectedRoute>} />
         <Route path="/agent-management" element={<AdminRoute><AgentManagementPage /></AdminRoute>} />
-        <Route path="/invoices" element={<AdminRoute><InvoicesPage /></AdminRoute>} />
+        <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
         <Route path="/revenue" element={<ProtectedRoute><RevenuePage /></ProtectedRoute>} />
         <Route path="/agent-reports" element={<ProtectedRoute><AgentReportsPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
