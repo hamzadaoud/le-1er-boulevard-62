@@ -3,11 +3,11 @@ import { ESCPOSFormatter } from "../utils/escposUtils";
 
 export const generateThankYouMessage = (): string => {
   const messages = [
-    "Merci pour votre visite! Nous esperons vous revoir tres bientot chez La Perle Rouge.",
-    "Votre sourire est notre plus belle recompense. A tres vite chez La Perle Rouge!",
-    "La Perle Rouge vous remercie de votre confiance. Au plaisir de vous servir a nouveau!",
-    "Un cafe chez La Perle Rouge, c'est un moment de bonheur a partager. Revenez vite!",
-    "Merci d'avoir choisi La Perle Rouge. Nous vous attendons pour votre prochaine pause cafe!"
+    "Merci pour votre visite! Nous esperons vous revoir tres bientot chez Le 1er Boulevard.",
+    "Votre sourire est notre plus belle recompense. A tres vite chez Le 1er Boulevard!",
+    "Le 1er Boulevard vous remercie de votre confiance. Au plaisir de vous servir a nouveau!",
+    "Un cafe chez Le 1er Boulevard, c'est un moment de bonheur a partager. Revenez vite!",
+    "Merci d'avoir choisi Le 1er Boulevard. Nous vous attendons pour votre prochaine pause cafe!"
   ];
   
   return messages[Math.floor(Math.random() * messages.length)];
@@ -20,13 +20,13 @@ export const printThermalInvoice = (order: Order): void => {
   // Header
   invoice += ESCPOSFormatter.textLarge();
   invoice += ESCPOSFormatter.textBold();
-  invoice += "LA PERLE ROUGE";
+  invoice += "Le 1er Boulevard";
   invoice += ESCPOSFormatter.newLine();
   invoice += ESCPOSFormatter.textNormal();
   invoice += ESCPOSFormatter.textBoldOff();
-  invoice += "123 Avenue des Cafés";
+  invoice += "19 , Immeuble Jakar";
   invoice += ESCPOSFormatter.newLine();
-  invoice += "75001 Paris, France";
+  invoice += "Boulevard Mohammed V 40000, Marrakech";
   invoice += ESCPOSFormatter.newLine();
   invoice += "Tel: 01 23 45 67 89";
   invoice += ESCPOSFormatter.multipleLines(2);
@@ -90,7 +90,7 @@ export const printThermalInvoice = (order: Order): void => {
   invoice += ESCPOSFormatter.alignCenter();
   invoice += "Merci de votre confiance !";
   invoice += ESCPOSFormatter.multipleLines(2);
-  invoice += "À bientôt chez La Perle Rouge !";
+  invoice += "À bientôt chez Le 1er Boulevard !";
   invoice += ESCPOSFormatter.multipleLines(6);
   
   // Cut paper
@@ -144,11 +144,11 @@ export const printReport = (
   // Header
   report += ESCPOSFormatter.textLarge();
   report += ESCPOSFormatter.textBold();
-  report += "LA PERLE ROUGE";
+  report += "Le 1er Boulevard";
   report += ESCPOSFormatter.newLine();
   report += ESCPOSFormatter.textNormal();
   report += ESCPOSFormatter.textBoldOff();
-  report += "DOHA ABOUAB MARRAKECH";
+  report += "19 , Immeuble Jakar, Boulevard Mohammed V 40000, Marrakech";
   report += ESCPOSFormatter.multipleLines(2);
   
   // Report title
@@ -218,7 +218,7 @@ export const printTicket = (order: Order): void => {
   customerTicket += ESCPOSFormatter.newLine();
   customerTicket += ESCPOSFormatter.textNormal();
   customerTicket += ESCPOSFormatter.textBoldOff();
-  customerTicket += "GUELIZ";
+  customerTicket += "19 , Immeuble Jakar, Boulevard Mohammed V 40000, Marrakech";
   customerTicket += ESCPOSFormatter.newLine();
   customerTicket += `TABLE ${order.tableNumber || 'N/A'}`;
   customerTicket += ESCPOSFormatter.multipleLines(1);
