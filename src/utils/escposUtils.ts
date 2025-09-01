@@ -193,14 +193,8 @@ export class ESCPOSFormatter {
            this.cutPaper();
   }
   
-  // Print directly to thermal printer using Web Serial API
+  // Print directly to thermal printer using Web Serial API or Electron
   static print(content: string): void {
-    // Check if we're in browser mode and fall back immediately
-    if (!isElectron()) {
-      console.log('[ESCPOS] Browser mode detected, using browser print dialog...');
-      this.fallbackPrint(content);
-      return;
-    }
     this.printDirectly(content);
   }
 
@@ -210,6 +204,7 @@ export class ESCPOSFormatter {
     const enhancedClientTicket = this.init() + clientTicket;
     const enhancedAgentTicket = this.init() + agentTicket;
     
+    // Try to print directly first
     this.printDirectly(enhancedClientTicket).then(() => {
       // Print agent ticket after a delay for physical separation
       setTimeout(() => {
@@ -217,7 +212,10 @@ export class ESCPOSFormatter {
       }, 2000);
     }).catch((error) => {
       console.error('Direct printing failed:', error);
-      this.fallbackPrint(enhancedClientTicket + '\n\n' + enhancedAgentTicket);
+      // Only fallback if we're not in Electron mode or if it's a non-critical error
+      if (!isElectron()) {
+        this.fallbackPrint(enhancedClientTicket + '\n\n--- COPIE AGENT ---\n\n' + enhancedAgentTicket);
+      }
     });
   }
   
@@ -237,11 +235,11 @@ export class ESCPOSFormatter {
           return;
         }
       } catch (error) {
-        console.warn('Electron printing failed, falling back to Web Serial:', error);
+        console.warn('Electron printing failed, trying other methods:', error);
       }
     }
     
-    // Use saved printer settings for Web Serial API
+    // Use saved printer settings for Web Serial API (browser or Electron with Web Serial)
     if ('serial' in navigator && printerType === 'serial') {
       try {
         let portToUse = this.selectedPort;
@@ -290,9 +288,13 @@ export class ESCPOSFormatter {
         // Reset port on error
         this.selectedPort = null;
         
-        // Show error dialog
-        alert('Erreur d\'impression: Impossible de se connecter à l\'imprimante thermique. Vérifiez la connexion USB ou configurez l\'imprimante dans les paramètres.');
-        throw error;
+        // In Electron, show error dialog, in browser continue to fallback
+        if (isElectron()) {
+          alert('Erreur d\'impression: Impossible de se connecter à l\'imprimante thermique. Vérifiez la connexion USB ou configurez l\'imprimante dans les paramètres.');
+          throw error;
+        } else {
+          console.log('Falling back to browser printing...');
+        }
       }
     } else if (printerType === 'system' && savedSystemPrinter) {
       console.log(`[ESCPOS] Using system printer: ${savedSystemPrinter}`);
@@ -300,9 +302,11 @@ export class ESCPOSFormatter {
       this.fallbackPrint(content, savedSystemPrinter);
       return;
     } else {
-      console.warn('No printer configured or Web Serial API not supported');
-      this.fallbackPrint(content);
+      console.log('No specific printer configured, using fallback printing method');
     }
+    
+    // Final fallback to browser printing
+    this.fallbackPrint(content);
   }
   
   private static fallbackPrint(content: string, printerName?: string): void {
