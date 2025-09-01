@@ -19,7 +19,7 @@ const InvoicesPage: React.FC = () => {
   };
   
   return (
-    <DashboardLayout requireAdmin={true}>
+    <DashboardLayout>
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6 text-center">
           <h1 className="text-2xl md:text-3xl font-bold text-cafeBlack">Factures</h1>
