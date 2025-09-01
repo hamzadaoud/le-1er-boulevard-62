@@ -38,22 +38,22 @@ export class ESCPOSFormatter {
     return this.ESC + '8' + String.fromCharCode(clampedInterval) + String.fromCharCode(2);
   }
   
-  // Enhanced text emphasis for darker printing
+  // Enhanced text emphasis for darker printing - FIXED
   static textEmphasisOn(): string {
-    return this.ESC + 'G1'; // Emphasis mode on (darker than bold)
+    return this.ESC + 'G' + '\x01'; // Fixed: should be ESC G 1, not ESC G1
   }
   
   static textEmphasisOff(): string {
-    return this.ESC + 'G0'; // Emphasis mode off
+    return this.ESC + 'G' + '\x00'; // Fixed: should be ESC G 0, not ESC G0
   }
   
-  // Double strike for even darker text
+  // Double strike for even darker text - FIXED
   static doubleStrikeOn(): string {
-    return this.ESC + 'g1'; // Double strike on
+    return this.ESC + 'g' + '\x01'; // Fixed: should be ESC g 1, not ESC g1
   }
   
   static doubleStrikeOff(): string {
-    return this.ESC + 'g0'; // Double strike off
+    return this.ESC + 'g' + '\x00'; // Fixed: should be ESC g 0, not ESC g0
   }
   
   // Combination command for maximum darkness
@@ -67,15 +67,15 @@ export class ESCPOSFormatter {
   
   // Text alignment
   static alignLeft(): string {
-    return this.ESC + 'a0';
+    return this.ESC + 'a' + '\x00';
   }
   
   static alignCenter(): string {
-    return this.ESC + 'a1';
+    return this.ESC + 'a' + '\x01';
   }
   
   static alignRight(): string {
-    return this.ESC + 'a2';
+    return this.ESC + 'a' + '\x02';
   }
   
   // Text size and style
@@ -84,11 +84,11 @@ export class ESCPOSFormatter {
   }
   
   static textBold(): string {
-    return this.ESC + 'E1'; // Bold on
+    return this.ESC + 'E' + '\x01'; // Bold on
   }
   
   static textBoldOff(): string {
-    return this.ESC + 'E0'; // Bold off
+    return this.ESC + 'E' + '\x00'; // Bold off
   }
   
   static textDoubleHeight(): string {
@@ -129,7 +129,7 @@ export class ESCPOSFormatter {
   
   // Character encoding
   static setCharacterSet(): string {
-    return this.ESC + 'R0'; // USA character set
+    return this.ESC + 'R' + '\x00'; // USA character set
   }
   
   // Enhanced barcode generation with darker settings
@@ -140,7 +140,7 @@ export class ESCPOSFormatter {
     
     return this.GS + 'h' + String.fromCharCode(height) + // Set height
            this.GS + 'w' + String.fromCharCode(width) + // Set width
-           this.GS + 'H2' + // Print HRI below barcode
+           this.GS + 'H' + '\x02' + // Print HRI below barcode
            this.GS + 'k' + String.fromCharCode(barcodeType) + 
            String.fromCharCode(data.length) + data;
   }
@@ -400,28 +400,52 @@ export class ESCPOSFormatter {
     }
   }
 
-  // Clean content for browser display only (removes ESC/POS commands)
+  // FIXED: Comprehensive content cleaning for browser display
   private static cleanContentForBrowser(content: string): string {
     return content
-      .replace(/\x1b@/g, '') // Remove init
-      .replace(/\x1bR0/g, '') // Remove character set
-      .replace(/\x1b![0-9\x00-\x30]/g, '') // Remove text size commands
-      .replace(/\x1bE[01]/g, '') // Remove bold commands
-      .replace(/\x1ba[0-2]/g, '') // Remove alignment commands
-      .replace(/\x1b3./g, '') // Remove line spacing
-      .replace(/\x1d[hHwVk]./g, '') // Remove barcode and cut commands
-      .replace(/\x1dV[\x00-\x01]/g, '') // Remove cut commands (GS V 0 and GS V 1)
-      .replace(/\x1dh[\x00-\xFF]*?\x1dk[\x00-\xFF]*?/g, '') // Remove complete barcode sequences
-      .replace(/\x1dh.+/g, '') // Remove barcode height commands
-      .replace(/\x1dw.+/g, '') // Remove barcode width commands  
-      .replace(/\x1dH[0-9]/g, '') // Remove HRI position commands
-      .replace(/\x1dk[\x00-\xFF]+/g, '') // Remove barcode data commands
-      .replace(/\x1dG.*?/g, '') // Remove print density commands
-      .replace(/\x1b[78].*?/g, '') // Remove heat settings
-      .replace(/[\x00-\x08\x0B-\x1F\x7F]/g, '') // Remove all control characters except \t and \n
-      .replace(/\n\s*\n\s*\n/g, '\n\n') // Clean up excessive line breaks
-      .replace(/^\s+|\s+$/g, '') // Trim whitespace
-      .replace(/\r/g, '') // Remove carriage returns
-      .trim();
+      // Remove initialization commands
+      .replace(/\x1b@/g, '')
+      
+      // Remove print density and heat settings (GS commands)
+      .replace(/\x1d\(K[\x00-\xFF]{2}0[\x00-\xFF]/g, '') // GS ( K commands for density
+      .replace(/\x1b7[\x00-\xFF]{3}/g, '') // Heat time ESC 7
+      .replace(/\x1b8[\x00-\xFF]{2}/g, '') // Heat interval ESC 8
+      
+      // Remove character set commands
+      .replace(/\x1bR[\x00-\xFF]/g, '')
+      
+      // Remove text formatting commands
+      .replace(/\x1b![\x00-\xFF]/g, '') // Text size/style commands
+      .replace(/\x1bE[\x00-\x01]/g, '') // Bold on/off
+      .replace(/\x1bG[\x00-\x01]/g, '') // Emphasis on/off  
+      .replace(/\x1bg[\x00-\x01]/g, '') // Double strike on/off
+      
+      // Remove alignment commands
+      .replace(/\x1ba[\x00-\x02]/g, '')
+      
+      // Remove line spacing commands
+      .replace(/\x1b3[\x00-\xFF]/g, '')
+      
+      // Remove barcode commands (comprehensive)
+      .replace(/\x1dh[\x00-\xFF]/g, '') // Barcode height
+      .replace(/\x1dw[\x00-\xFF]/g, '') // Barcode width
+      .replace(/\x1dH[\x00-\xFF]/g, '') // HRI position
+      .replace(/\x1dk[\x00-\xFF][\x00-\xFF]*?/g, '') // Barcode data
+      
+      // Remove paper cut commands
+      .replace(/\x1dV[\x00-\x01]/g, '')
+      
+      // Remove any remaining ESC/POS control sequences
+      .replace(/\x1b[\x20-\x7F]?[\x00-\xFF]*/g, '') // ESC commands
+      .replace(/\x1d[\x20-\x7F]?[\x00-\xFF]*/g, '') // GS commands
+      
+      // Remove all non-printable characters except newlines and tabs
+      .replace(/[\x00-\x08\x0B-\x1F\x7F-\x9F]/g, '')
+      
+      // Clean up formatting
+      .replace(/\r\n/g, '\n') // Normalize line endings
+      .replace(/\r/g, '\n') // Convert remaining CR to LF
+      .replace(/\n{3,}/g, '\n\n') // Reduce excessive line breaks
+      .trim(); // Remove leading/trailing whitespace
   }
 }
