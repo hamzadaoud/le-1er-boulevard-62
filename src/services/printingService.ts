@@ -15,10 +15,7 @@ export const generateThankYouMessage = (): string => {
 
 export const printThermalInvoice = (order: Order): void => {
   // Generate thermal invoice
-  let invoice = ESCPOSFormatter.init();
-  invoice += ESCPOSFormatter.setCharacterSet();
-  invoice += ESCPOSFormatter.textNormal();
-  invoice += ESCPOSFormatter.alignCenter();
+  let invoice = ESCPOSFormatter.alignCenter();
   
   // Header
   invoice += ESCPOSFormatter.textLarge();
@@ -142,10 +139,7 @@ export const printReport = (
   };
 
   // Generate thermal receipt
-  let report = ESCPOSFormatter.init();
-  report += ESCPOSFormatter.setCharacterSet();
-  report += ESCPOSFormatter.textNormal();
-  report += ESCPOSFormatter.alignCenter();
+  let report = ESCPOSFormatter.alignCenter();
   
   // Header
   report += ESCPOSFormatter.textLarge();
@@ -214,28 +208,27 @@ export const printReport = (
 export const printTicket = (order: Order): void => {
   const thankYouMessage = generateThankYouMessage();
   
-  // Generate customer ticket with ESC/POS commands
-  let customerTicket = ESCPOSFormatter.init();
-  customerTicket += ESCPOSFormatter.setCharacterSet();
-  customerTicket += ESCPOSFormatter.textNormal();
-  customerTicket += ESCPOSFormatter.alignCenter();
+  // Generate customer ticket WITHOUT ESC/POS init commands (will be added by printBothTickets)
+  let customerTicket = ESCPOSFormatter.alignCenter();
   
   // Header
   customerTicket += ESCPOSFormatter.textLarge();
   customerTicket += ESCPOSFormatter.textBold();
-  customerTicket += "LA PERLE ROUGE";
+  customerTicket += "LE 1ER BOULEVARD";
   customerTicket += ESCPOSFormatter.newLine();
   customerTicket += ESCPOSFormatter.textNormal();
   customerTicket += ESCPOSFormatter.textBoldOff();
-  customerTicket += "Cafe • Restaurant";
-  customerTicket += ESCPOSFormatter.multipleLines(2);
+  customerTicket += "GUELIZ";
+  customerTicket += ESCPOSFormatter.newLine();
+  customerTicket += `TABLE ${order.tableNumber || 'N/A'}`;
+  customerTicket += ESCPOSFormatter.multipleLines(1);
   
   // Date and server info
   customerTicket += ESCPOSFormatter.alignCenter();
   customerTicket += "Date: " + ESCPOSFormatter.formatDate(order.date);
   customerTicket += ESCPOSFormatter.newLine();
   customerTicket += "Serveur: " + order.agentName;
-  customerTicket += ESCPOSFormatter.multipleLines(2);
+  customerTicket += ESCPOSFormatter.multipleLines(1);
   
   // Separator line
   customerTicket += ESCPOSFormatter.alignCenter();
@@ -271,40 +264,48 @@ export const printTicket = (order: Order): void => {
   // Barcode
   customerTicket += ESCPOSFormatter.alignCenter();
   customerTicket += ESCPOSFormatter.generateBarcode(order.id);
-  customerTicket += ESCPOSFormatter.multipleLines(2);
+  customerTicket += ESCPOSFormatter.newLine();
   
   // Thank you message
   customerTicket += ESCPOSFormatter.alignCenter();
-  customerTicket += thankYouMessage.substring(0, 100);
-  customerTicket += ESCPOSFormatter.multipleLines(2);
-  
-  // Footer with additional line breaks
-  customerTicket += ESCPOSFormatter.alignCenter();
-  customerTicket += "Merci de votre visite!";
-  customerTicket += ESCPOSFormatter.multipleLines(3);
-  customerTicket += "DOHA ABOUAB MARRAKECH";
+  customerTicket += "Merci de votre visite !";
   customerTicket += ESCPOSFormatter.multipleLines(4);
   
-  // Cut paper
+  // Cut paper - this ends the first ticket
   customerTicket += ESCPOSFormatter.cutPaper();
   
-  // Generate agent copy with additional line breaks
-  let agentCopy = ESCPOSFormatter.init();
-  agentCopy += ESCPOSFormatter.setCharacterSet();
-  agentCopy += ESCPOSFormatter.alignCenter();
+  // Generate agent copy as completely separate document WITHOUT init commands (will be added by printBothTickets)  
+  let agentCopy = ESCPOSFormatter.alignCenter();
   agentCopy += ESCPOSFormatter.textBold();
-  agentCopy += "LA PERLE ROUGE";
+  agentCopy += ESCPOSFormatter.horizontalLine('*', 32);
   agentCopy += ESCPOSFormatter.newLine();
+  agentCopy += "NOUVELLE FEUILLE - AGENT";
+  agentCopy += ESCPOSFormatter.newLine();
+  agentCopy += ESCPOSFormatter.horizontalLine('*', 32);
+  agentCopy += ESCPOSFormatter.textBoldOff();
+  agentCopy += ESCPOSFormatter.newLine();
+  
+  agentCopy += ESCPOSFormatter.textLarge();
+  agentCopy += ESCPOSFormatter.textBold();
+  agentCopy += "LE 1ER BOULEVARD";
+  agentCopy += ESCPOSFormatter.newLine();
+  agentCopy += ESCPOSFormatter.textNormal();
+  agentCopy += ESCPOSFormatter.textBoldOff();
+  agentCopy += ESCPOSFormatter.textBold();
   agentCopy += "COPIE AGENT";
   agentCopy += ESCPOSFormatter.textBoldOff();
-  agentCopy += ESCPOSFormatter.multipleLines(2);
+  agentCopy += ESCPOSFormatter.newLine();
+  agentCopy += `TABLE ${order.tableNumber || 'N/A'}`;
+  agentCopy += ESCPOSFormatter.multipleLines(1);
   
   // Agent info
   agentCopy += ESCPOSFormatter.alignCenter();
   agentCopy += "Date: " + ESCPOSFormatter.formatDate(order.date);
   agentCopy += ESCPOSFormatter.newLine();
   agentCopy += "Agent: " + order.agentName;
-  agentCopy += ESCPOSFormatter.multipleLines(2);
+  agentCopy += ESCPOSFormatter.newLine();
+  agentCopy += "Commande #: " + order.id;
+  agentCopy += ESCPOSFormatter.multipleLines(1);
   
   // Products only
   agentCopy += ESCPOSFormatter.alignCenter();
@@ -321,15 +322,21 @@ export const printTicket = (order: Order): void => {
     agentCopy += ESCPOSFormatter.newLine();
   });
   
-  agentCopy += ESCPOSFormatter.multipleLines(4);
+  agentCopy += ESCPOSFormatter.horizontalLine('-', 32);
+  agentCopy += ESCPOSFormatter.newLine();
+  agentCopy += ESCPOSFormatter.textBold();
+  agentCopy += "TOTAL: " + ESCPOSFormatter.formatCurrency(order.total);
+  agentCopy += ESCPOSFormatter.textBoldOff();
+  agentCopy += ESCPOSFormatter.multipleLines(2);
+  
   agentCopy += ESCPOSFormatter.alignCenter();
   agentCopy += ESCPOSFormatter.generateBarcode(order.id);
   agentCopy += ESCPOSFormatter.multipleLines(4);
+  
+  // Cut paper - this ends the second ticket
   agentCopy += ESCPOSFormatter.cutPaper();
   
-  // Print customer ticket first
-  ESCPOSFormatter.print(customerTicket);
-  
-  // Print agent copy right after
-  ESCPOSFormatter.print(agentCopy);
+  // Use printBothTickets to ensure proper separation between tickets
+  // This method will print them as two separate print jobs with a delay between them
+  ESCPOSFormatter.printBothTickets(customerTicket, agentCopy);
 };
