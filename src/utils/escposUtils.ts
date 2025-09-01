@@ -198,25 +198,105 @@ export class ESCPOSFormatter {
     this.printDirectly(content);
   }
 
-  // Print both tickets directly with enhanced settings
+  // Print both tickets directly with enhanced settings for thermal printers
   static printBothTickets(clientTicket: string, agentTicket: string): void {
     // Prepend initialization and darkness settings to both tickets
     const enhancedClientTicket = this.init() + clientTicket;
     const enhancedAgentTicket = this.init() + agentTicket;
     
-    // Try to print directly first
-    this.printDirectly(enhancedClientTicket).then(() => {
+    // For table tickets, prioritize Electron thermal printing
+    this.printTableTicketDirectly(enhancedClientTicket).then(() => {
       // Print agent ticket after a delay for physical separation
       setTimeout(() => {
-        this.printDirectly(enhancedAgentTicket);
+        this.printTableTicketDirectly(enhancedAgentTicket);
       }, 2000);
     }).catch((error) => {
-      console.error('Direct printing failed:', error);
-      // Only fallback if we're not in Electron mode or if it's a non-critical error
-      if (!isElectron()) {
+      console.error('Table ticket printing failed:', error);
+      // In Electron, show configuration dialog instead of fallback
+      if (isElectron()) {
+        alert('Erreur d\'impression: Veuillez configurer votre imprimante thermique dans les paramètres de l\'application.');
+      } else {
+        // Only fallback to browser printing if not in Electron
         this.fallbackPrint(enhancedClientTicket + '\n\n--- COPIE AGENT ---\n\n' + enhancedAgentTicket);
       }
     });
+  }
+  
+  // Specialized printing method for table tickets that prioritizes thermal printing
+  private static async printTableTicketDirectly(content: string): Promise<void> {
+    // Get saved printer settings
+    const printerType = await electronStore.get('printerType') || 'serial';
+    const savedSerialPort = await electronStore.get('selectedSerialPort');
+    
+    // Try Electron printing first if available (highest priority for table tickets)
+    if (isElectron()) {
+      try {
+        console.log('[TABLE TICKET] Printing via Electron thermal printer...');
+        const success = await printToElectronPrinter(content);
+        if (success) {
+          console.log('Table ticket printed successfully via Electron');
+          return;
+        } else {
+          throw new Error('Electron printing returned false');
+        }
+      } catch (error) {
+        console.error('Electron printing failed for table ticket:', error);
+        throw error; // Don't continue to other methods for table tickets in Electron
+      }
+    }
+    
+    // Use Web Serial API for thermal printers (browser mode only)
+    if ('serial' in navigator && printerType === 'serial') {
+      try {
+        let portToUse = this.selectedPort;
+        
+        // Use saved port if available and no port currently selected
+        if (!portToUse && savedSerialPort) {
+          console.log(`[TABLE TICKET] Using saved serial port: ${savedSerialPort}`);
+          const availablePorts = await (navigator as any).serial.getPorts();
+          portToUse = availablePorts.find((port: any) => port.getInfo().usbVendorId || port.path === savedSerialPort);
+          
+          if (!portToUse) {
+            console.log('[TABLE TICKET] Requesting thermal printer port selection...');
+            portToUse = await (navigator as any).serial.requestPort();
+          }
+          
+          this.selectedPort = portToUse;
+        } else if (!portToUse) {
+          console.log('[TABLE TICKET] Requesting serial port for thermal printer...');
+          portToUse = await (navigator as any).serial.requestPort();
+          this.selectedPort = portToUse;
+        }
+        
+        // Check if port is already open, if not open it with optimal settings
+        if (!portToUse.readable) {
+          await portToUse.open({ 
+            baudRate: 9600,
+            dataBits: 8,
+            stopBits: 1,
+            parity: 'none',
+            flowControl: 'none'
+          });
+        }
+        
+        const writer = portToUse.writable.getWriter();
+        const encoder = new TextEncoder();
+        
+        // Send raw ESC/POS content for table tickets
+        await writer.write(encoder.encode(content));
+        await writer.close();
+        
+        console.log('Table ticket printed successfully via Serial API');
+        return;
+      } catch (error) {
+        console.error('Serial printing failed for table ticket:', error);
+        this.selectedPort = null;
+        throw error;
+      }
+    }
+    
+    // If we reach here, no thermal printer is available
+    throw new Error('No thermal printer configured for table tickets');
   }
   
   private static async printDirectly(content: string): Promise<void> {
