@@ -195,6 +195,12 @@ export class ESCPOSFormatter {
   
   // Print directly to thermal printer using Web Serial API
   static print(content: string): void {
+    // Check if we're in browser mode and fall back immediately
+    if (!isElectron()) {
+      console.log('[ESCPOS] Browser mode detected, using browser print dialog...');
+      this.fallbackPrint(content);
+      return;
+    }
     this.printDirectly(content);
   }
 
@@ -303,64 +309,89 @@ export class ESCPOSFormatter {
     // Clean content for printing
     const cleanContent = this.cleanContentForBrowser(content);
     
-    // Create a hidden iframe for browser printing
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.top = '-1000px';
-    iframe.style.left = '-1000px';
-    iframe.style.width = '1px';
-    iframe.style.height = '1px';
-    document.body.appendChild(iframe);
+    // Create a new window for printing instead of iframe (more reliable)
+    const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
     
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (iframeDoc) {
-      iframeDoc.open();
-      iframeDoc.write(`
+    if (printWindow) {
+      printWindow.document.write(`
         <html>
         <head>
-          <title>Print</title>
+          <title>Rapport d'impression</title>
           <style>
             @page { 
-              margin: 0; 
-              size: 80mm auto;
+              margin: 10mm; 
+              size: A4;
             }
             body { 
               font-family: 'Courier New', monospace; 
-              font-size: 10px; 
-              line-height: 1.2;
+              font-size: 12px; 
+              line-height: 1.4;
               margin: 0;
-              padding: 5mm;
-              width: 70mm;
+              padding: 10mm;
               color: #000 !important;
               -webkit-print-color-adjust: exact;
+              background: white;
             }
-            .ticket-content {
+            .report-content {
               white-space: pre-line;
+              max-width: 100%;
+              word-wrap: break-word;
+            }
+            .header {
               text-align: center;
               font-weight: bold;
+              font-size: 16px;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+            }
+            .section {
+              margin: 15px 0;
+            }
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
             }
           </style>
         </head>
         <body>
-          <div class="ticket-content">${cleanContent}</div>
+          <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px; cursor: pointer;">
+              Imprimer ce rapport
+            </button>
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; margin-left: 10px;">
+              Fermer
+            </button>
+          </div>
+          <div class="report-content">${cleanContent}</div>
         </body>
         </html>
       `);
-      iframeDoc.close();
+      printWindow.document.close();
       
-      // Print after content loads
+      // Auto-focus and trigger print dialog after content loads
       setTimeout(() => {
-        if (iframe.contentWindow) {
-          // If specific printer name is provided, try to use it (limited browser support)
-          if (printerName) {
-            console.log(`Printing to system printer: ${printerName}`);
-          }
-          iframe.contentWindow.print();
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch (error) {
+          console.warn('Auto-print failed:', error);
+          alert('La fenêtre d\'impression a été ouverte. Cliquez sur "Imprimer ce rapport" pour imprimer.');
         }
-        // Remove iframe after printing
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1000);
+      }, 500);
+    } else {
+      // Fallback if popup is blocked
+      alert('Impossible d\'ouvrir la fenêtre d\'impression. Vérifiez que les popups ne sont pas bloqués.');
+      
+      // Try direct browser print as last resort
+      const printContent = document.createElement('div');
+      printContent.innerHTML = `<pre style="font-family: monospace; white-space: pre-line;">${cleanContent}</pre>`;
+      printContent.style.display = 'none';
+      document.body.appendChild(printContent);
+      
+      setTimeout(() => {
+        window.print();
+        document.body.removeChild(printContent);
       }, 100);
     }
   }
