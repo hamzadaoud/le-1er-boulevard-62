@@ -220,8 +220,13 @@ export const printTicket = (order: Order): void => {
   customerTicket += ESCPOSFormatter.textBoldOff();
   customerTicket += "19 , Immeuble Jakar, Boulevard Mohammed V 40000, Marrakech";
   customerTicket += ESCPOSFormatter.newLine();
-  customerTicket += `TABLE ${order.tableNumber || 'N/A'}`;
-  customerTicket += ESCPOSFormatter.multipleLines(1);
+  {
+    const tn: any = (order as any).tableNumber;
+    if (tn !== undefined && tn !== null) {
+      customerTicket += `TABLE ${tn}`;
+      customerTicket += ESCPOSFormatter.multipleLines(1);
+    }
+  }
   
   // Date and server info
   customerTicket += ESCPOSFormatter.alignCenter();
@@ -295,8 +300,13 @@ export const printTicket = (order: Order): void => {
   agentCopy += "COPIE AGENT";
   agentCopy += ESCPOSFormatter.textBoldOff();
   agentCopy += ESCPOSFormatter.newLine();
-  agentCopy += `TABLE ${order.tableNumber || 'N/A'}`;
-  agentCopy += ESCPOSFormatter.multipleLines(1);
+  {
+    const tn: any = (order as any).tableNumber;
+    if (tn !== undefined && tn !== null) {
+      agentCopy += `TABLE ${tn}`;
+      agentCopy += ESCPOSFormatter.multipleLines(1);
+    }
+  }
   
   // Agent info
   agentCopy += ESCPOSFormatter.alignCenter();

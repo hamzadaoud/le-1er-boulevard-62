@@ -5,16 +5,28 @@ import { getOrders } from '../services/cafeService';
 import { Printer } from 'lucide-react';
 import { Order } from '../types';
 import { printThermalInvoice } from '../services/printingService';
+import PrinterSelectDialog from '../components/PrinterSelectDialog';
+import { isElectron, electronStore } from '@/utils/electronUtils';
 
 const InvoicesPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [printerDialogOpen, setPrinterDialogOpen] = useState(false);
+  const [pendingPrint, setPendingPrint] = useState<(() => void) | null>(null);
   
   useEffect(() => {
     const loadedOrders = getOrders();
     setOrders(loadedOrders);
   }, []);
   
-  const printInvoice = (order: Order) => {
+  const printInvoice = async (order: Order) => {
+    if (isElectron()) {
+      const type = await electronStore.get('printerType');
+      if (!type) {
+        setPendingPrint(() => () => printThermalInvoice(order));
+        setPrinterDialogOpen(true);
+        return;
+      }
+    }
     printThermalInvoice(order);
   };
   
@@ -77,6 +89,15 @@ const InvoicesPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <PrinterSelectDialog
+        open={printerDialogOpen}
+        onOpenChange={setPrinterDialogOpen}
+        onSaved={() => {
+          const fn = pendingPrint;
+          setPendingPrint(null);
+          fn?.();
+        }}
+      />
     </DashboardLayout>
   );
 };

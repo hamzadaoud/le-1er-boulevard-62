@@ -5,6 +5,8 @@ import { printThermalRevenueReport } from '../services/thermalRevenueService';
 import { checkIsAdmin } from '../services/authService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CalendarDays, Calendar, Printer, Trash2, Database } from 'lucide-react';
+import PrinterSelectDialog from '../components/PrinterSelectDialog';
+import { isElectron, electronStore } from '@/utils/electronUtils';
 
 const RevenuePage: React.FC = () => {
   const [revenueData, setRevenueData] = useState<any[]>([]);

@@ -8,6 +8,8 @@ import { printTableTicket } from '../services/ticketTableService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PrinterSelectDialog from '../components/PrinterSelectDialog';
+import { isElectron, electronStore } from '@/utils/electronUtils';
 
 const TableOrdersPage: React.FC = () => {
   // Panier séparé par table
@@ -17,6 +19,8 @@ const TableOrdersPage: React.FC = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [expandedDescriptions, setExpandedDescriptions] = useState<{ [key: string]: boolean }>({});
   const [printedTables, setPrintedTables] = useState<Set<string>>(new Set());
+  const [printerDialogOpen, setPrinterDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   
   // Panier de la table actuelle
   const cart = tablesCarts[selectedTable] || [];
@@ -134,7 +138,7 @@ const TableOrdersPage: React.FC = () => {
     return cart.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
   };
   
-  const submitOrder = () => {
+  const submitOrder = async () => {
     if (cart.length === 0) {
       alert("Veuillez ajouter au moins une boisson au panier.");
       return;
@@ -148,6 +152,18 @@ const TableOrdersPage: React.FC = () => {
     const order = createTableOrder(selectedTable, cart);
     
     if (order) {
+      if (isElectron()) {
+        const type = await electronStore.get('printerType');
+        if (!type) {
+          setPendingAction(() => () => {
+            printTableTicket(order);
+            setPrintedTables(prev => new Set(prev).add(selectedTable));
+            updateTableCart(selectedTable, []);
+          });
+          setPrinterDialogOpen(true);
+          return;
+        }
+      }
       printTableTicket(order);
       // Marquer la table comme imprimée
       setPrintedTables(prev => new Set(prev).add(selectedTable));
@@ -401,6 +417,15 @@ const TableOrdersPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <PrinterSelectDialog
+        open={printerDialogOpen}
+        onOpenChange={setPrinterDialogOpen}
+        onSaved={() => {
+          const fn = pendingAction;
+          setPendingAction(null);
+          fn?.();
+        }}
+      />
     </DashboardLayout>
   );
 };

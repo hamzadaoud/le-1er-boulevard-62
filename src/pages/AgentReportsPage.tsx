@@ -1,17 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { Printer, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getRevenues } from '../services/cafeService';
 import { printReport } from '../services/printingService';
+import PrinterSelectDialog from '../components/PrinterSelectDialog';
+import { isElectron, electronStore } from '@/utils/electronUtils';
 
 const AgentReportsPage: React.FC = () => {
-  const handlePrintDailyReport = () => {
+  const [printerDialogOpen, setPrinterDialogOpen] = useState(false);
+  const [pendingPrint, setPendingPrint] = useState<(() => void) | null>(null);
+
+  const handlePrintDailyReport = async () => {
     const today = new Date().toISOString().split('T')[0];
     const revenues = getRevenues();
     const todayRevenues = revenues.filter(r => r.date === today);
     const totalRevenue = todayRevenues.reduce((sum, r) => sum + r.amount, 0);
-    
+
+    if (isElectron()) {
+      const type = await electronStore.get('printerType');
+      if (!type) {
+        setPendingPrint(() => () => printReport(todayRevenues, 'day', today, today, totalRevenue));
+        setPrinterDialogOpen(true);
+        return;
+      }
+    }
+
     printReport(todayRevenues, 'day', today, today, totalRevenue);
   };
 
